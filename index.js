@@ -1,7 +1,7 @@
 const fs = require("fs");
 const http = require("http");
-const path = require("path");
 const url = require("url");
+const slugify = require("slugify");
 const replaceTemplate = require("./modules/replaceTemplate");
 
 const tempCard = fs.readFileSync(
@@ -17,8 +17,13 @@ const tempProduct = fs.readFileSync(
   "utf-8"
 );
 
-const data = fs.readFileSync(`${__dirname}/dev-data/data.json`, "utf-8");
-const dataObj = JSON.parse(data);
+let data = fs.readFileSync(`${__dirname}/dev-data/data.json`, "utf-8");
+let dataObj = JSON.parse(data);
+
+dataObj = dataObj.map((el) => {
+  el.id = slugify(el.productName, { lower: true });
+  return el;
+});
 
 const server = http.createServer((req, res) => {
   // const pathname = req.url;
@@ -35,7 +40,19 @@ const server = http.createServer((req, res) => {
     // PRODUCT
   } else if (pathname === "/product") {
     res.writeHeader(200, { "Content-Type": "text/html" });
-    const productHTML = dataObj[query.id];
+
+    // console.log(
+    //   dataObj.findIndex(
+    //     (obj) => slugify(obj.productName, { lower: true }) === query.id
+    //   )
+    // );
+    const productHTML =
+      dataObj[
+        dataObj.findIndex(
+          (obj) => slugify(obj.productName, { lower: true }) === query.id
+        )
+      ];
+
     const output = replaceTemplate(tempProduct, productHTML);
     res.end(output);
     // API
